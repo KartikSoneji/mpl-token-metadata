@@ -195,22 +195,22 @@ fn get_delegate_record_update_authority(
     delegate_record_info: &AccountInfo,
     authority: &Pubkey,
 ) -> Result<Pubkey, ProgramError> {
-    let delegate_record_update_authority = match delegate_scenario {
+    let (delegate, update_authority) = match delegate_scenario {
         DelegateScenario::Metadata(_) => {
-            MetadataDelegateRecord::from_account_info(delegate_record_info)
-                .map_err(|_| MetadataError::DelegateNotFound)?
-                .update_authority
+            let delegate_record = MetadataDelegateRecord::from_account_info(delegate_record_info)
+                .map_err(|_| MetadataError::DelegateNotFound)?;
+            (delegate_record.delegate, delegate_record.update_authority)
         }
         DelegateScenario::Holder(_) => {
-            HolderDelegateRecord::from_account_info(delegate_record_info)
-                .map_err(|_| MetadataError::DelegateNotFound)?
-                .update_authority
+            let delegate_record = HolderDelegateRecord::from_account_info(delegate_record_info)
+                .map_err(|_| MetadataError::DelegateNotFound)?;
+            (delegate_record.delegate, delegate_record.update_authority)
         }
         _ => return Err(MetadataError::InvalidDelegateRole.into()),
     };
 
-    if cmp_pubkeys(&delegate_record_update_authority, authority) {
-        Ok(delegate_record_update_authority)
+    if cmp_pubkeys(&delegate, authority) {
+        Ok(update_authority)
     } else {
         Err(MetadataError::InvalidDelegate.into())
     }
